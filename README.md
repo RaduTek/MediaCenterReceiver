@@ -9,6 +9,11 @@ It can be considered a functional equivalent to the original eHome/WMC IR receiv
 -   [HID-Project](https://github.com/NicoHood/HID) - advanced USB HID functions (Keyboard, Consumer and Mouse)
 -   [IRremote](https://github.com/Arduino-IRremote/Arduino-IRremote) - Receive IR remote signals
 
+## Hardware
+
+-   ATMEGA32u4 based board
+-   IR receiver module (e.g. VS1838B) connected to pin 2
+
 ## Features
 
 -   Implements most buttons with Windows Media Center shortcuts
