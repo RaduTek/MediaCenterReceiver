@@ -1,5 +1,3 @@
-#define DECODE_NEC
-
 #define REMOTE_TYPE_LZC 2
 
 #define LZC_ADDRESS 0x10

@@ -1,6 +1,9 @@
 #include "MCE_Remote.h"
 #include "Logitech_Z_Cinema_Remote.h"
 
+#define DECODE_NEC
+#define DECODE_RC6
+
 #include <IRremote.hpp>
 #include "HID-Project.h"
 

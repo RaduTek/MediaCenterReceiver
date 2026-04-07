@@ -1,5 +1,3 @@
-#define DECODE_RC6
-
 #define REMOTE_TYPE_MCE 1
 
 #define MCE_ADDRESS 0x4
