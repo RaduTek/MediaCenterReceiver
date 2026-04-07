@@ -295,6 +295,10 @@ bool decode_key(uint16_t key, bool is_repeat) {
     case LZC_KEY_PAUSE:
       Consumer.press(HID_CONSUMER_PAUSE);
       return true;
+    
+    case MCE_KEY_PLAY_PAUSE:
+      Consumer.press(HID_CONSUMER_PLAY_SLASH_PAUSE);
+      return true;
 
     case MCE_KEY_STOP:
     case LZC_KEY_STOP:
