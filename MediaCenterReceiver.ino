@@ -19,10 +19,8 @@
 // Runtime variables, used to handle current remote state
 uint16_t      key_code        = 0;
 bool          key_held        = false;
-bool          hold_confirmed  = false;
 unsigned long last_activity   = 0;
 uint8_t       wheel_phase     = 0;
-unsigned long press_time      = 0;
 uint8_t       wheel_mode      = WHEEL_MODE_VOLUME;
 
 // Keypad state variables
@@ -63,10 +61,22 @@ void loop() {
       IrReceiver.decodedIRData.flags &
       (IRDATA_FLAGS_IS_AUTO_REPEAT | IRDATA_FLAGS_IS_REPEAT);
 
+#ifdef DEBUG
+    Serial.print(F("IR Frame: Addr=0x"));
+    Serial.print(IrReceiver.decodedIRData.address, HEX);
+    Serial.print(F(" Cmd=0x"));
+    Serial.print(IrReceiver.decodedIRData.command, HEX);
+    Serial.print(F(" Prot="));
+    Serial.print(IrReceiver.decodedIRData.protocol);
+    Serial.print(is_repeat ? F(" REPEAT") : F(" NEW"));
+    Serial.println();
+#endif
+    
     // Calculate current key code from IR data
     uint16_t current_key_code = 0;
-    if (IrReceiver.decodedIRData.protocol == RC6 &&
-        IrReceiver.decodedIRData.address == MCE_ADDRESS) {
+    // RC6/RC6A: mask out toggle bit in address (bit 7)
+    if ((IrReceiver.decodedIRData.protocol == RC6 || IrReceiver.decodedIRData.protocol == RC6A) &&
+        (IrReceiver.decodedIRData.address & 0x7F) == MCE_ADDRESS) {
       current_key_code = REMOTE_TYPE_MCE << 8 | IrReceiver.decodedIRData.command;
     } else if (IrReceiver.decodedIRData.protocol == NEC &&
                IrReceiver.decodedIRData.address == LZC_ADDRESS) {
@@ -77,10 +87,7 @@ void loop() {
 
     if (!is_repeat || key_changed) {
       // New IR frame or different key
-
       releaseHeldKey();
-
-      hold_confirmed = false;
       wheel_phase = 0;
 
       if (current_key_code != 0) {
@@ -88,8 +95,7 @@ void loop() {
         key_held = decode_key(key_code, false);
       }
       
-      press_time = millis();
-      last_activity = press_time;
+      last_activity = millis();
 
 #ifdef DEBUG
       Serial.print(F("Key "));
@@ -97,13 +103,10 @@ void loop() {
 #endif
 
     } else {
-      // Repeat frame (same key)
-      
+      // Repeat frame (same key) - only re-trigger if not a hold key
       last_activity = millis();
 
-      if (key_held) {
-        hold_confirmed = true;
-      } else {
+      if (!key_held) {
         decode_key(key_code, true);
       }
     }
@@ -111,18 +114,9 @@ void loop() {
     IrReceiver.resume();
   }
 
-  // Release logic
-  if (key_held) {
-    if (hold_confirmed) {
-      if (millis() - last_activity >= REPEAT_INTERVAL) {
-        releaseHeldKey();
-      }
-    }
-    else {
-      if (millis() - press_time >= REPEAT_INTERVAL) {
-        releaseHeldKey();
-      }
-    }
+  // Release held key on inactivity timeout
+  if (key_held && millis() - last_activity >= REPEAT_INTERVAL) {
+    releaseHeldKey();
   }
 
 }
@@ -132,7 +126,6 @@ void releaseHeldKey() {
   Keyboard.releaseAll();
   System.releaseAll();
   key_held = false;
-  hold_confirmed = false;
 }
 
 void handle_keypad(uint8_t key) {
